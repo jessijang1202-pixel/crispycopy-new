@@ -46,177 +46,124 @@ export default function BrandDNAPage({ onComplete }: Props) {
   const [step, setStep] = useState(1)
   const [jobType, setJobType] = useState<JobType | null>(null)
   const [form, setForm] = useState({
-    brandName: '',
-    oneLiner: '',
-    products: '',
-    tone: '' as ToneType | '',
-    target: '',
-    differentiator: '',
-    keyMessage1: '',
-    keyMessage2: '',
-    keyMessage3: '',
+    brandName: '', oneLiner: '', products: '', tone: '' as ToneType | '',
+    target: '', differentiator: '', keyMessage1: '', keyMessage2: '', keyMessage3: '',
   })
   const [jobAnswers, setJobAnswers] = useState<Record<string, string>>({})
 
-  const updateForm = (key: string, value: string) =>
-    setForm((prev) => ({ ...prev, [key]: value }))
-
+  const updateForm = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }))
   const canProceedStep1 = jobType !== null
-  const canProceedStep2 =
-    form.brandName && form.oneLiner && form.products && form.tone &&
+  const canProceedStep2 = form.brandName && form.oneLiner && form.products && form.tone &&
     form.target && form.differentiator && form.keyMessage1 && form.keyMessage2 && form.keyMessage3
 
   const handleComplete = () => {
     if (!jobType || !form.tone) return
     const data: BrandDNA = {
-      brandName: form.brandName,
-      oneLiner: form.oneLiner,
-      products: form.products,
-      tone: form.tone as ToneType,
-      target: form.target,
-      differentiator: form.differentiator,
+      brandName: form.brandName, oneLiner: form.oneLiner, products: form.products,
+      tone: form.tone as ToneType, target: form.target, differentiator: form.differentiator,
       keyMessages: [form.keyMessage1, form.keyMessage2, form.keyMessage3],
-      jobType,
-      jobSpecificAnswers: jobAnswers,
+      jobType, jobSpecificAnswers: jobAnswers,
     }
     localStorage.setItem('crispy_brand', JSON.stringify(data))
     onComplete(data)
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10 px-4">
+    <div className="min-h-screen py-10 px-4" style={{ backgroundColor: '#0f172a' }}>
       <div className="max-w-2xl mx-auto">
-        {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">브랜드 DNA 등록</h1>
-          <p className="text-gray-500 mt-1 text-sm">AI가 여러분의 브랜드를 기억합니다</p>
+          <h1 className="text-2xl font-bold gradient-text">브랜드 DNA 등록</h1>
+          <p className="text-slate-400 mt-1 text-sm">AI가 여러분의 브랜드를 기억합니다</p>
         </div>
 
         {/* Step Indicator */}
         <div className="flex items-center justify-center gap-4 mb-8">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center gap-4">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-colors ${
-                step > s ? 'bg-orange-500 text-white' :
-                step === s ? 'bg-orange-500 text-white' :
-                'bg-gray-200 text-gray-400'
-              }`}>
+              <div
+                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all"
+                style={{
+                  background: step >= s ? 'linear-gradient(135deg, #3b82f6, #22c55e)' : '#1e293b',
+                  color: step >= s ? 'white' : '#475569',
+                  border: step >= s ? 'none' : '1px solid #334155',
+                }}
+              >
                 {step > s ? <Check className="w-4 h-4" /> : s}
               </div>
-              {s < 3 && <div className={`w-16 h-0.5 ${step > s ? 'bg-orange-500' : 'bg-gray-200'}`} />}
+              {s < 3 && (
+                <div className="w-16 h-0.5 transition-all" style={{ background: step > s ? 'linear-gradient(to right, #3b82f6, #22c55e)' : '#334155' }} />
+              )}
             </div>
           ))}
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          {/* Step 1: 업종 선택 */}
+        <div className="card p-8">
+          {/* Step 1 */}
           {step === 1 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">업종을 선택해주세요</h2>
+              <h2 className="text-lg font-semibold text-slate-100 mb-6">업종을 선택해주세요</h2>
               <div className="grid grid-cols-2 gap-4">
                 {JOB_TYPES.map((j) => (
                   <button
                     key={j.type}
                     onClick={() => setJobType(j.type)}
-                    className={`p-5 rounded-xl border-2 text-left transition-all ${
-                      jobType === j.type
-                        ? 'border-orange-500 bg-orange-50'
-                        : 'border-gray-100 hover:border-orange-200'
-                    }`}
+                    className="p-5 rounded-xl text-left transition-all"
+                    style={{
+                      border: jobType === j.type ? '2px solid #3b82f6' : '1px solid #334155',
+                      backgroundColor: jobType === j.type ? 'rgba(59,130,246,0.1)' : '#0f172a',
+                    }}
                   >
                     <div className="text-2xl mb-2">{j.emoji}</div>
-                    <div className="font-semibold text-gray-900">{j.label}</div>
-                    <div className="text-xs text-gray-500 mt-1">{j.desc}</div>
+                    <div className="font-semibold text-slate-100">{j.label}</div>
+                    <div className="text-xs text-slate-400 mt-1">{j.desc}</div>
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {/* Step 2: 공통 질문 */}
+          {/* Step 2 */}
           {step === 2 && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-6">브랜드 기본 정보</h2>
+              <h2 className="text-lg font-semibold text-slate-100 mb-6">브랜드 기본 정보</h2>
               <div className="space-y-5">
                 <Field label="브랜드명" required>
-                  <input
-                    type="text"
-                    value={form.brandName}
-                    onChange={(e) => updateForm('brandName', e.target.value)}
-                    placeholder="예: 마켓올리브"
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.brandName} onChange={(e) => updateForm('brandName', e.target.value)} placeholder="예: 마켓올리브" className="input-dark" />
                 </Field>
-
                 <Field label="한 줄 설명 (타겟 고객이 느껴야 할 감정)" required>
-                  <input
-                    type="text"
-                    value={form.oneLiner}
-                    onChange={(e) => updateForm('oneLiner', e.target.value)}
-                    placeholder="예: 바쁜 직장인도 건강하게 먹을 수 있다는 안도감"
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.oneLiner} onChange={(e) => updateForm('oneLiner', e.target.value)} placeholder="예: 바쁜 직장인도 건강하게 먹을 수 있다는 안도감" className="input-dark" />
                 </Field>
-
                 <Field label="주요 제품/서비스" required>
-                  <input
-                    type="text"
-                    value={form.products}
-                    onChange={(e) => updateForm('products', e.target.value)}
-                    placeholder="예: 간편 건강식 밀키트, 영양제 구독 서비스"
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.products} onChange={(e) => updateForm('products', e.target.value)} placeholder="예: 간편 건강식 밀키트, 영양제 구독 서비스" className="input-dark" />
                 </Field>
-
                 <Field label="브랜드 톤" required>
                   <div className="flex flex-wrap gap-2">
                     {TONES.map((t) => (
                       <button
                         key={t}
                         onClick={() => updateForm('tone', t)}
-                        className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                          form.tone === t
-                            ? 'bg-orange-500 text-white'
-                            : 'bg-gray-100 text-gray-600 hover:bg-orange-100'
-                        }`}
+                        className="px-4 py-2 rounded-full text-sm font-medium transition-all"
+                        style={{
+                          background: form.tone === t ? 'linear-gradient(to right, #3b82f6, #22c55e)' : '#0f172a',
+                          color: form.tone === t ? 'white' : '#94a3b8',
+                          border: form.tone === t ? 'none' : '1px solid #334155',
+                        }}
                       >
                         {t}
                       </button>
                     ))}
                   </div>
                 </Field>
-
                 <Field label="타겟 고객층" required>
-                  <input
-                    type="text"
-                    value={form.target}
-                    onChange={(e) => updateForm('target', e.target.value)}
-                    placeholder="예: 30대 초반 직장인 여성, 건강에 관심 많은 2인 가구"
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.target} onChange={(e) => updateForm('target', e.target.value)} placeholder="예: 30대 초반 직장인 여성, 건강에 관심 많은 2인 가구" className="input-dark" />
                 </Field>
-
                 <Field label="경쟁사 대비 차별점" required>
-                  <input
-                    type="text"
-                    value={form.differentiator}
-                    onChange={(e) => updateForm('differentiator', e.target.value)}
-                    placeholder="예: 국내산 재료만 사용, 영양사가 직접 설계한 레시피"
-                    className={inputClass}
-                  />
+                  <input type="text" value={form.differentiator} onChange={(e) => updateForm('differentiator', e.target.value)} placeholder="예: 국내산 재료만 사용, 영양사가 직접 설계한 레시피" className="input-dark" />
                 </Field>
-
                 <Field label="주요 메시지 3가지" required>
                   <div className="space-y-2">
                     {(['keyMessage1', 'keyMessage2', 'keyMessage3'] as const).map((key, i) => (
-                      <input
-                        key={key}
-                        type="text"
-                        value={form[key]}
-                        onChange={(e) => updateForm(key, e.target.value)}
-                        placeholder={`메시지 ${i + 1}`}
-                        className={inputClass}
-                      />
+                      <input key={key} type="text" value={form[key]} onChange={(e) => updateForm(key, e.target.value)} placeholder={`메시지 ${i + 1}`} className="input-dark" />
                     ))}
                   </div>
                 </Field>
@@ -224,13 +171,13 @@ export default function BrandDNAPage({ onComplete }: Props) {
             </div>
           )}
 
-          {/* Step 3: 업종별 추가 질문 */}
+          {/* Step 3 */}
           {step === 3 && jobType && (
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 mb-2">
+              <h2 className="text-lg font-semibold text-slate-100 mb-2">
                 {JOB_TYPES.find((j) => j.type === jobType)?.label} 추가 정보
               </h2>
-              <p className="text-sm text-gray-500 mb-6">더 정확한 콘텐츠 생성을 위한 질문입니다.</p>
+              <p className="text-sm text-slate-400 mb-6">더 정확한 콘텐츠 생성을 위한 질문입니다.</p>
               <div className="space-y-5">
                 {JOB_QUESTIONS[jobType].map((q) => (
                   <Field key={q.key} label={q.label}>
@@ -239,7 +186,7 @@ export default function BrandDNAPage({ onComplete }: Props) {
                       onChange={(e) => setJobAnswers((prev) => ({ ...prev, [q.key]: e.target.value }))}
                       placeholder={q.placeholder}
                       rows={2}
-                      className={`${inputClass} resize-none`}
+                      className="input-dark resize-none"
                     />
                   </Field>
                 ))}
@@ -248,35 +195,28 @@ export default function BrandDNAPage({ onComplete }: Props) {
           )}
 
           {/* Navigation */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-gray-100">
+          <div className="flex justify-between mt-8 pt-6" style={{ borderTop: '1px solid #334155' }}>
             {step > 1 ? (
               <button
                 onClick={() => setStep(step - 1)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 hover:bg-gray-50 font-medium text-sm"
+                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium text-sm transition-colors"
+                style={{ border: '1px solid #334155' }}
               >
-                <ChevronLeft className="w-4 h-4" />
-                이전
+                <ChevronLeft className="w-4 h-4" />이전
               </button>
-            ) : (
-              <div />
-            )}
+            ) : <div />}
 
             {step < 3 ? (
               <button
                 onClick={() => setStep(step + 1)}
                 disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 disabled:opacity-40 disabled:cursor-not-allowed text-white font-semibold text-sm transition-colors"
+                className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm"
               >
-                다음
-                <ChevronRight className="w-4 h-4" />
+                다음<ChevronRight className="w-4 h-4" />
               </button>
             ) : (
-              <button
-                onClick={handleComplete}
-                className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold text-sm transition-colors"
-              >
-                <Check className="w-4 h-4" />
-                등록 완료
+              <button onClick={handleComplete} className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm">
+                <Check className="w-4 h-4" />등록 완료
               </button>
             )}
           </div>
@@ -286,14 +226,11 @@ export default function BrandDNAPage({ onComplete }: Props) {
   )
 }
 
-const inputClass =
-  'w-full px-4 py-2.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:border-transparent text-sm'
-
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 mb-1.5">
-        {label} {required && <span className="text-orange-500">*</span>}
+      <label className="block text-sm font-medium text-slate-300 mb-1.5">
+        {label} {required && <span style={{ color: '#3b82f6' }}>*</span>}
       </label>
       {children}
     </div>

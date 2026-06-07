@@ -1,1 +1,54 @@
 @import "tailwindcss";
+
+@layer base {
+  body {
+    background-color: #0f172a;
+    color: #f1f5f9;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    background: linear-gradient(to right, #3b82f6, #22c55e);
+    color: white;
+    font-weight: 600;
+    border-radius: 0.75rem;
+    transition: opacity 0.2s;
+  }
+  .btn-primary:hover {
+    opacity: 0.9;
+  }
+  .btn-primary:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+  }
+  .card {
+    background-color: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 1rem;
+  }
+  .input-dark {
+    width: 100%;
+    padding: 0.625rem 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #334155;
+    background-color: #0f172a;
+    color: #f1f5f9;
+    font-size: 0.875rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .input-dark::placeholder {
+    color: #475569;
+  }
+  .input-dark:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+  }
+  .gradient-text {
+    background: linear-gradient(to right, #3b82f6, #22c55e);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+}
