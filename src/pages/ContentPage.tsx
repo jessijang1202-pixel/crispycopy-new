@@ -24,7 +24,8 @@ export default function ContentPage({ brand, schedules }: Props) {
     try {
       setContent(await generateContent(brand, selectedSchedule))
     } catch (e) {
-      setError('콘텐츠 생성에 실패했습니다. API 키를 확인하거나 다시 시도해주세요.')
+      const msg = e instanceof Error ? e.message : String(e)
+      setError(`오류: ${msg}`)
       console.error(e)
     } finally {
       setLoading(false)
