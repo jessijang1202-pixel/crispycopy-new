@@ -111,7 +111,7 @@ export default function App() {
     setPage('login')
   }
 
-  const isAuthPage = page === 'login' || page === 'signup' || page === 'onboarding'
+  const isAuthPage = page === 'login' || page === 'signup'
   const isAdmin = !!userEmail && (userEmail === ADMIN_EMAIL || userEmail.toLowerCase() === 'jessijang1202@gmail.com')
 
   return (
