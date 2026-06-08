@@ -115,7 +115,9 @@ export default function App() {
   }
 
   const isAuthPage = page === 'login' || page === 'signup'
-  const isAdmin = !!userEmail && (userEmail === ADMIN_EMAIL || userEmail.toLowerCase() === 'jessijang1202@gmail.com')
+  const isAdmin = !!userEmail && userEmail.trim().toLowerCase() === 'jessijang1202@gmail.com'
+
+  console.log('[DEBUG] page:', page, '| userEmail:', JSON.stringify(userEmail), '| isAdmin:', isAdmin, '| isAuthPage:', isAuthPage)
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0f172a' }}>
