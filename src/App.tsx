@@ -64,32 +64,35 @@ export default function App() {
     }
   }, [])
 
+  const goAfterLogin = useCallback((uid: string, email: string) => {
+    setUserId(uid)
+    setUserEmail(email)
+    if (email.toLowerCase() === 'jessijang1202@gmail.com') {
+      setPage('dashboard')
+    } else {
+      loadUserData(uid, email)
+    }
+  }, [loadUserData])
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
-        const email = session.user.email ?? null
-        setUserId(session.user.id)
-        setUserEmail(email)
-        loadUserData(session.user.id, email ?? undefined)
+        const email = session.user.email ?? ''
+        goAfterLogin(session.user.id, email)
       }
     })
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session?.user) {
-        setUserId(session.user.id)
-        setUserEmail(session.user.email ?? null)
-      } else {
+      if (!session?.user) {
         setUserId(null)
         setUserEmail(null)
       }
     })
     return () => subscription.unsubscribe()
-  }, [loadUserData])
+  }, [goAfterLogin])
 
-  const handleLogin = async (uid: string, email: string) => {
-    setUserId(uid)
-    setUserEmail(email)
-    await loadUserData(uid, email)
+  const handleLogin = (uid: string, email: string) => {
+    goAfterLogin(uid, email)
   }
 
   const handleBrandComplete = async (data: BrandDNA) => {
