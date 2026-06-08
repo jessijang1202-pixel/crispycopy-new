@@ -3,6 +3,9 @@ import type { BrandDNA, GeneratedContent, Schedule } from '@/types'
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
+// 과부하(503) 발생 시 다음 모델로 자동 전환
+const MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash']
+
 export async function generateContent(
   brand: BrandDNA,
   schedule: Schedule
@@ -37,14 +40,26 @@ export async function generateContent(
   "instagram": "인스타그램 콘텐츠 (시각적 설명 포함, 관련 해시태그 10개 포함)"
 }`
 
-  const response = await ai.models.generateContent({
-    model: 'gemini-2.0-flash',
-    contents: prompt,
-  })
+  let lastError: Error | null = null
 
-  const text = response.text ?? '{}'
-  const jsonMatch = text.match(/\{[\s\S]*\}/)
-  if (!jsonMatch) throw new Error('콘텐츠 생성 결과를 파싱할 수 없습니다.')
+  for (const model of MODELS) {
+    try {
+      const response = await ai.models.generateContent({ model, contents: prompt })
+      const text = response.text ?? '{}'
+      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) throw new Error('콘텐츠 생성 결과를 파싱할 수 없습니다.')
+      return JSON.parse(jsonMatch[0]) as GeneratedContent
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      // 503(과부하) 또는 429(한도 초과)이면 다음 모델로 시도
+      if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('429') || msg.includes('quota')) {
+        lastError = e instanceof Error ? e : new Error(msg)
+        continue
+      }
+      // 그 외 에러(404, 인증 실패 등)는 즉시 throw
+      throw e
+    }
+  }
 
-  return JSON.parse(jsonMatch[0]) as GeneratedContent
+  throw lastError ?? new Error('모든 모델에서 콘텐츠 생성에 실패했습니다.')
 }
