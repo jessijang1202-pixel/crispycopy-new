@@ -4,7 +4,7 @@ import type { BrandDNA, GeneratedContent, Schedule } from '@/types'
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
 // 과부하(503) 발생 시 다음 모델로 자동 전환
-const MODELS = ['gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash']
+const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-2.5-pro', 'gemini-2.0-flash']
 
 export async function generateContent(
   brand: BrandDNA,
@@ -51,8 +51,8 @@ export async function generateContent(
       return JSON.parse(jsonMatch[0]) as GeneratedContent
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
-      // 503(과부하) 또는 429(한도 초과)이면 다음 모델로 시도
-      if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('429') || msg.includes('quota')) {
+      // 503(과부하), 429(한도 초과), 404(모델 없음)이면 다음 모델로 시도
+      if (msg.includes('503') || msg.includes('UNAVAILABLE') || msg.includes('429') || msg.includes('quota') || msg.includes('404') || msg.includes('NOT_FOUND')) {
         lastError = e instanceof Error ? e : new Error(msg)
         continue
       }
