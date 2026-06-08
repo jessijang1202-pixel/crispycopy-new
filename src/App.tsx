@@ -28,7 +28,9 @@ export default function App() {
   const [userId, setUserId] = useState<string | null>(null)
   const [userEmail, setUserEmail] = useState<string | null>(null)
 
-  const loadUserData = useCallback(async (uid: string) => {
+  const loadUserData = useCallback(async (uid: string, email?: string) => {
+    const isAdminUser = email?.toLowerCase() === 'jessijang1202@gmail.com'
+
     const [brandRes, schedRes] = await Promise.all([
       supabase.from('brand_dna').select('data').eq('user_id', uid).single(),
       supabase.from('user_schedules').select('schedules').eq('user_id', uid).single(),
@@ -38,6 +40,8 @@ export default function App() {
       const b = brandRes.data.data as BrandDNA
       setBrand(b)
       localStorage.setItem('crispy_brand', JSON.stringify(b))
+      setPage('dashboard')
+    } else if (isAdminUser) {
       setPage('dashboard')
     } else {
       const saved = localStorage.getItem('crispy_brand')
@@ -63,9 +67,10 @@ export default function App() {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
+        const email = session.user.email ?? null
         setUserId(session.user.id)
-        setUserEmail(session.user.email ?? null)
-        loadUserData(session.user.id)
+        setUserEmail(email)
+        loadUserData(session.user.id, email ?? undefined)
       }
     })
 
@@ -84,7 +89,7 @@ export default function App() {
   const handleLogin = async (uid: string, email: string) => {
     setUserId(uid)
     setUserEmail(email)
-    await loadUserData(uid)
+    await loadUserData(uid, email)
   }
 
   const handleBrandComplete = async (data: BrandDNA) => {
