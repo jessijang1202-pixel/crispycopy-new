@@ -19,7 +19,7 @@ const NAV_ITEMS: { page: Page; label: string; icon: typeof LayoutDashboard }[] =
   { page: 'content', label: '콘텐츠', icon: Sparkles },
 ]
 
-const ADMIN_EMAIL = process.env.ADMIN_EMAIL
+const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'jessijang1202@gmail.com'
 
 export default function App() {
   const [page, setPage] = useState<Page>('login')
@@ -107,7 +107,7 @@ export default function App() {
   }
 
   const isAuthPage = page === 'login' || page === 'signup' || page === 'onboarding'
-  const isAdmin = userEmail === ADMIN_EMAIL
+  const isAdmin = !!userEmail && (userEmail === ADMIN_EMAIL || userEmail.toLowerCase() === 'jessijang1202@gmail.com')
 
   return (
     <div className="min-h-screen" style={{ backgroundColor: '#0f172a' }}>
