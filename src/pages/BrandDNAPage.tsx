@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
 import type { BrandDNA, JobType, ToneType } from '@/types'
+import { supabase } from '@/lib/supabase'
 
 interface Props {
+  userId?: string
   onComplete: (data: BrandDNA) => void
 }
 
@@ -42,7 +44,7 @@ const JOB_QUESTIONS: Record<JobType, { key: string; label: string; placeholder: 
   ],
 }
 
-export default function BrandDNAPage({ onComplete }: Props) {
+export default function BrandDNAPage({ userId, onComplete }: Props) {
   const [step, setStep] = useState(1)
   const [jobType, setJobType] = useState<JobType | null>(null)
   const [form, setForm] = useState({
@@ -56,7 +58,7 @@ export default function BrandDNAPage({ onComplete }: Props) {
   const canProceedStep2 = form.brandName && form.oneLiner && form.products && form.tone &&
     form.target && form.differentiator && form.keyMessage1 && form.keyMessage2 && form.keyMessage3
 
-  const handleComplete = () => {
+  const handleComplete = async () => {
     if (!jobType || !form.tone) return
     const data: BrandDNA = {
       brandName: form.brandName, oneLiner: form.oneLiner, products: form.products,
@@ -65,6 +67,9 @@ export default function BrandDNAPage({ onComplete }: Props) {
       jobType, jobSpecificAnswers: jobAnswers,
     }
     localStorage.setItem('crispy_brand', JSON.stringify(data))
+    if (userId) {
+      await supabase.from('brand_dna').upsert({ user_id: userId, data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    }
     onComplete(data)
   }
 

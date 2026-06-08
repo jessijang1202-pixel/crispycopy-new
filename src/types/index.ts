@@ -30,4 +30,4 @@ export interface GeneratedContent {
   instagram: string
 }
 
-export type Page = 'login' | 'signup' | 'onboarding' | 'brand-dna' | 'schedule' | 'dashboard' | 'content'
+export type Page = 'login' | 'signup' | 'onboarding' | 'brand-dna' | 'schedule' | 'dashboard' | 'content' | 'admin'

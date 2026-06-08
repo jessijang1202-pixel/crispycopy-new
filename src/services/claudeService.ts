@@ -1,5 +1,6 @@
 import { GoogleGenAI } from '@google/genai'
 import type { BrandDNA, GeneratedContent, Schedule } from '@/types'
+import { supabase } from '@/lib/supabase'
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY })
 
@@ -8,7 +9,8 @@ const MODELS = ['gemini-2.5-flash', 'gemini-3.5-flash', 'gemini-2.5-pro', 'gemin
 
 export async function generateContent(
   brand: BrandDNA,
-  schedule: Schedule
+  schedule: Schedule,
+  userId?: string
 ): Promise<GeneratedContent> {
   const dateLabel =
     schedule.type === 'campaign'
@@ -48,7 +50,11 @@ export async function generateContent(
       const text = response.text ?? '{}'
       const jsonMatch = text.match(/\{[\s\S]*\}/)
       if (!jsonMatch) throw new Error('콘텐츠 생성 결과를 파싱할 수 없습니다.')
-      return JSON.parse(jsonMatch[0]) as GeneratedContent
+      const result = JSON.parse(jsonMatch[0]) as GeneratedContent
+      if (userId) {
+        supabase.from('content_logs').insert({ user_id: userId, schedule_name: schedule.name, model_used: model }).then(() => {})
+      }
+      return result
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       // 503(과부하), 429(한도 초과), 404(모델 없음)이면 다음 모델로 시도

@@ -4,11 +4,12 @@ import { generateContent } from '@/services/claudeService'
 import type { BrandDNA, GeneratedContent, Schedule } from '@/types'
 
 interface Props {
+  userId?: string
   brand: BrandDNA
   schedules: Schedule[]
 }
 
-export default function ContentPage({ brand, schedules }: Props) {
+export default function ContentPage({ userId, brand, schedules }: Props) {
   const [selectedId, setSelectedId] = useState<string>('')
   const [loading, setLoading] = useState(false)
   const [content, setContent] = useState<GeneratedContent | null>(null)
@@ -22,7 +23,7 @@ export default function ContentPage({ brand, schedules }: Props) {
     if (!selectedSchedule) return
     setLoading(true); setError(''); setContent(null); setApproved({ blog: false, instagram: false })
     try {
-      setContent(await generateContent(brand, selectedSchedule))
+      setContent(await generateContent(brand, selectedSchedule, userId))
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       setError(`오류: ${msg}`)

@@ -1,8 +1,10 @@
 import { useState } from 'react'
 import { Plus, Trash2, Calendar, Megaphone, Sun } from 'lucide-react'
 import type { Schedule } from '@/types'
+import { supabase } from '@/lib/supabase'
 
 interface Props {
+  userId?: string
   schedules: Schedule[]
   onUpdate: (schedules: Schedule[]) => void
 }
@@ -17,11 +19,19 @@ const TABS: { type: TabType; label: string; icon: typeof Calendar }[] = [
 
 const emptyForm = { name: '', startDate: '', endDate: '', date: '', description: '', keyMessage: '' }
 
-export default function SchedulePage({ schedules, onUpdate }: Props) {
+export default function SchedulePage({ userId, schedules, onUpdate }: Props) {
   const [activeTab, setActiveTab] = useState<TabType>('campaign')
   const [form, setForm] = useState(emptyForm)
 
   const update = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }))
+
+  const syncSchedules = async (updated: Schedule[]) => {
+    onUpdate(updated)
+    localStorage.setItem('crispy_schedules', JSON.stringify(updated))
+    if (userId) {
+      await supabase.from('user_schedules').upsert({ user_id: userId, schedules: updated, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+    }
+  }
 
   const handleAdd = () => {
     if (!form.name) return
@@ -30,16 +40,12 @@ export default function SchedulePage({ schedules, onUpdate }: Props) {
       ...(activeTab === 'campaign' && { startDate: form.startDate, endDate: form.endDate, keyMessage: form.keyMessage }),
       ...(activeTab === 'event' && { date: form.date }),
     }
-    const updated = [...schedules, newSchedule]
-    onUpdate(updated)
-    localStorage.setItem('crispy_schedules', JSON.stringify(updated))
+    syncSchedules([...schedules, newSchedule])
     setForm(emptyForm)
   }
 
   const handleDelete = (id: string) => {
-    const updated = schedules.filter((s) => s.id !== id)
-    onUpdate(updated)
-    localStorage.setItem('crispy_schedules', JSON.stringify(updated))
+    syncSchedules(schedules.filter((s) => s.id !== id))
   }
 
   const filtered = schedules.filter((s) => s.type === activeTab)
