@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { CheckCircle, AlertCircle, Calendar, Sparkles, Pencil, Dna, Plus, ChevronDown, ChevronUp, Trash2 } from 'lucide-react'
+import { CheckCircle, AlertCircle, Calendar, Sparkles, Pencil, Dna, Plus, Trash2 } from 'lucide-react'
 import type { BrandDNA, Schedule } from '@/types'
 import { supabase } from '@/lib/supabase'
 
@@ -89,8 +89,8 @@ export default function DashboardPage({ brand, schedules, userId, onNavigate, on
     await syncSchedules(schedules.filter(s => s.id !== id))
   }
 
-  const toggleExpand = (type: ScheduleType) => {
-    setExpandedType(prev => prev === type ? null : type)
+  const selectType = (type: ScheduleType) => {
+    setExpandedType(type)
     setEditingId(null)
   }
 
@@ -232,8 +232,8 @@ export default function DashboardPage({ brand, schedules, userId, onNavigate, on
               return (
                 <button
                   key={type}
-                  onClick={() => toggleExpand(type)}
-                  className="rounded-xl py-4 text-center transition-all relative"
+                  onClick={() => selectType(type)}
+                  className="rounded-xl py-4 text-center transition-all"
                   style={{
                     backgroundColor: meta.bg,
                     border: `2px solid ${isActive ? meta.color : 'transparent'}`,
@@ -241,14 +241,6 @@ export default function DashboardPage({ brand, schedules, userId, onNavigate, on
                 >
                   <p className="text-2xl font-bold" style={{ color: meta.color }}>{countMap[type]}</p>
                   <p className="text-xs text-slate-400 mt-1">{meta.label}</p>
-                  {countMap[type] > 0 && (
-                    <span className="absolute top-2 right-2 opacity-50">
-                      {isActive
-                        ? <ChevronUp className="w-3 h-3" style={{ color: meta.color }} />
-                        : <ChevronDown className="w-3 h-3" style={{ color: meta.color }} />
-                      }
-                    </span>
-                  )}
                 </button>
               )
             })}
