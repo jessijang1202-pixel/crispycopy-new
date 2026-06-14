@@ -36,22 +36,31 @@ export default function App() {
       supabase.from('user_schedules').select('schedules').eq('user_id', uid).single(),
     ])
 
+    console.log('[DEBUG] brand_dna query:', brandRes)
+
+    // Brand DNA: Supabase → localStorage 순서로 시도
     if (brandRes.data?.data) {
       const b = brandRes.data.data as BrandDNA
       setBrand(b)
       localStorage.setItem('crispy_brand', JSON.stringify(b))
       setPage('dashboard')
-    } else if (isAdminUser) {
-      setPage('dashboard')
     } else {
       const saved = localStorage.getItem('crispy_brand')
       if (saved) {
-        try { setBrand(JSON.parse(saved)); setPage('dashboard') } catch { setPage('onboarding') }
+        try {
+          setBrand(JSON.parse(saved))
+          setPage('dashboard')
+        } catch {
+          if (isAdminUser) setPage('dashboard')
+          else setPage('onboarding')
+        }
       } else {
-        setPage('onboarding')
+        if (isAdminUser) setPage('dashboard')
+        else setPage('onboarding')
       }
     }
 
+    // 일정: Supabase → localStorage 순서로 시도
     if (schedRes.data?.schedules) {
       const s = schedRes.data.schedules as Schedule[]
       setSchedules(s)
@@ -67,11 +76,7 @@ export default function App() {
   const goAfterLogin = useCallback((uid: string, email: string) => {
     setUserId(uid)
     setUserEmail(email)
-    if (email.toLowerCase() === 'jessijang1202@gmail.com') {
-      setPage('dashboard')
-    } else {
-      loadUserData(uid, email)
-    }
+    loadUserData(uid, email)
   }, [loadUserData])
 
   useEffect(() => {
@@ -163,7 +168,7 @@ export default function App() {
       {page === 'login' && <LoginPage onLogin={handleLogin} onGoSignup={() => setPage('signup')} />}
       {page === 'signup' && <SignupPage onSignup={handleLogin} onGoLogin={() => setPage('login')} />}
       {page === 'onboarding' && <OnboardingPage onStart={() => setPage('brand-dna')} />}
-      {page === 'brand-dna' && <BrandDNAPage userId={userId ?? undefined} onComplete={handleBrandComplete} />}
+      {page === 'brand-dna' && <BrandDNAPage userId={userId ?? undefined} initialData={brand ?? undefined} onComplete={handleBrandComplete} />}
       {page === 'schedule' && <SchedulePage userId={userId ?? undefined} schedules={schedules} onUpdate={handleScheduleUpdate} />}
       {page === 'dashboard' && <DashboardPage brand={brand} schedules={schedules} onNavigate={setPage} />}
       {page === 'content' && brand && <ContentPage userId={userId ?? undefined} brand={brand} schedules={schedules} />}

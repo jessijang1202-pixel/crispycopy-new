@@ -1,243 +1,595 @@
 import { useState } from 'react'
-import { ChevronRight, ChevronLeft, Check } from 'lucide-react'
-import type { BrandDNA, JobType, ToneType } from '@/types'
+import { ChevronRight, ChevronLeft, Check, Sparkles, Dna } from 'lucide-react'
+import type { BrandDNA } from '@/types'
 import { supabase } from '@/lib/supabase'
 
 interface Props {
   userId?: string
+  initialData?: BrandDNA
   onComplete: (data: BrandDNA) => void
 }
 
-const JOB_TYPES: { type: JobType; label: string; emoji: string; desc: string }[] = [
-  { type: '1인창업자', label: '1인 창업자', emoji: '🚀', desc: '나만의 브랜드로 창업한 대표' },
-  { type: '프리랜서', label: '프리랜서', emoji: '💻', desc: '전문 기술을 바탕으로 일하는 개인' },
-  { type: '소상공인', label: '소상공인', emoji: '🏪', desc: '오프라인·온라인 매장 운영자' },
-  { type: '기타', label: '기타', emoji: '✨', desc: '그 외 개인·단체 운영자' },
+const USER_TYPE_OPTIONS = [
+  { value: '1인창업가', label: '1인 창업가', desc: '나만의 브랜드로 창업한 대표' },
+  { value: '프리랜서', label: '프리랜서', desc: '전문 기술로 일하는 개인' },
+  { value: '소상공인', label: '소상공인', desc: '오프라인·온라인 매장 운영자' },
+  { value: '기타', label: '기타', desc: '그 외 개인·단체 운영자' },
+]
+const PURPOSE_OPTIONS = ['정기 콘텐츠 발행', '이벤트/캠페인 홍보', '상품/서비스 판매', '브랜드 홍보', '아직 잘 모르겠어요']
+const TONE_OPTIONS = ['친근한', '전문적인', '따뜻한', '믿음직한', '트렌디한', '유쾌한', '차분한']
+const CHANNEL_OPTIONS = ['네이버 블로그', '인스타그램', '카카오톡', '당근', '스레드', '기타']
+const OPERATION_OPTIONS = [
+  { value: '정기', label: '평소에도 정기적으로 콘텐츠가 필요해요' },
+  { value: '이벤트', label: '이벤트/캠페인 때만 필요해요' },
+  { value: '둘다', label: '둘 다 필요해요' },
 ]
 
-const TONES: ToneType[] = ['친근함', '전문성', '고급스러움', '유머', '감성']
-
-const JOB_QUESTIONS: Record<JobType, { key: string; label: string; placeholder: string }[]> = {
-  '1인창업자': [
-    { key: 'founding_reason', label: '창업 계기', placeholder: '어떤 문제를 해결하고 싶어서 창업했나요?' },
-    { key: 'success_case', label: '대표 성공 사례', placeholder: '고객에게 가장 좋은 반응을 얻은 사례를 알려주세요.' },
-    { key: 'conversion_point', label: '고객 전환 포인트', placeholder: '처음 온 고객이 단골이 되는 이유는 무엇인가요?' },
-    { key: 'personal_story', label: '개인 스토리', placeholder: '대표님만의 독특한 경험이나 스토리를 공유해주세요.' },
-  ],
-  '프리랜서': [
-    { key: 'specialty', label: '전문 분야', placeholder: '어떤 분야에서 가장 두각을 나타내나요?' },
-    { key: 'portfolio', label: '대표 작업물', placeholder: '가장 자랑스러운 작업물이나 프로젝트를 알려주세요.' },
-    { key: 'work_process', label: '작업 프로세스', placeholder: '의뢰부터 납품까지 어떤 방식으로 진행하나요?' },
-    { key: 'ideal_client', label: '선호 클라이언트', placeholder: '어떤 유형의 클라이언트와 일할 때 가장 좋은 결과가 나오나요?' },
-  ],
-  '소상공인': [
-    { key: 'store_feature', label: '매장/서비스 특징', placeholder: '매장의 분위기나 특별한 특징이 있나요?' },
-    { key: 'signature', label: '시그니처 상품/서비스', placeholder: '가장 인기 있는 상품이나 서비스는 무엇인가요?' },
-    { key: 'regular_type', label: '단골 고객 유형', placeholder: '주로 어떤 유형의 고객이 단골이 되나요?' },
-    { key: 'community', label: '지역 커뮤니티 활동', placeholder: '지역 사회와 어떻게 연결되어 있나요?' },
-  ],
-  '기타': [
-    { key: 'industry_desc', label: '업종/활동 설명', placeholder: '어떤 분야에서 활동하고 계신가요?' },
-    { key: 'main_activity', label: '주요 활동', placeholder: '주된 활동이나 서비스는 무엇인가요?' },
-    { key: 'customer_touchpoint', label: '고객 접점', placeholder: '고객과 주로 어떤 방식으로 만나나요?' },
-    { key: 'unique_experience', label: '차별 경험', placeholder: '경쟁자와 다른 특별한 경험을 제공하나요?' },
-  ],
+interface FormState {
+  userType: string
+  purpose: string[]
+  brandName: string
+  industry: string
+  oneLiner: string
+  target: string
+  products: string
+  tone: string[]
+  toneCustom: string
+  brandFeeling: string
+  strengths: string
+  prohibitedWords: string
+  channels: string[]
+  operationStyle: string
 }
 
-export default function BrandDNAPage({ userId, onComplete }: Props) {
-  const [step, setStep] = useState(1)
-  const [jobType, setJobType] = useState<JobType | null>(null)
-  const [form, setForm] = useState({
-    brandName: '', oneLiner: '', products: '', tone: '' as ToneType | '',
-    target: '', differentiator: '', keyMessage1: '', keyMessage2: '', keyMessage3: '',
+const INITIAL: FormState = {
+  userType: '', purpose: [],
+  brandName: '', industry: '', oneLiner: '', target: '',
+  products: '', tone: [], toneCustom: '', brandFeeling: '', strengths: '', prohibitedWords: '',
+  channels: [], operationStyle: '',
+}
+
+type SetFn = (key: keyof FormState, value: string | string[]) => void
+type ToggleFn = (key: keyof FormState, value: string) => void
+
+interface StepProps {
+  form: FormState
+  set: SetFn
+  toggle: ToggleFn
+}
+
+function toFormState(dna: BrandDNA): FormState {
+  const knownTones = new Set(TONE_OPTIONS)
+  return {
+    userType: dna.userType || '',
+    purpose: Array.isArray(dna.purpose) ? dna.purpose : [],
+    brandName: dna.brandName || '',
+    industry: dna.industry || '',
+    oneLiner: dna.oneLiner || '',
+    target: dna.target || '',
+    products: dna.products || '',
+    tone: Array.isArray(dna.tone) ? dna.tone.filter(t => knownTones.has(t)) : [],
+    toneCustom: Array.isArray(dna.tone) ? dna.tone.filter(t => !knownTones.has(t)).join(', ') : '',
+    brandFeeling: dna.brandFeeling || '',
+    strengths: dna.strengths || '',
+    prohibitedWords: dna.prohibitedWords || '',
+    channels: Array.isArray(dna.channels) ? dna.channels : [],
+    operationStyle: dna.operationStyle || '',
+  }
+}
+
+export default function BrandDNAPage({ userId, initialData, onComplete }: Props) {
+  const [step, setStep] = useState(1) // 1–4 = 입력 단계, 5 = 요약 화면
+  const [form, setForm] = useState<FormState>(() => initialData ? toFormState(initialData) : INITIAL)
+  const [saving, setSaving] = useState(false)
+
+  const set: SetFn = (key, value) => setForm(prev => ({ ...prev, [key]: value }))
+
+  const toggle: ToggleFn = (key, value) => {
+    const arr = form[key] as string[]
+    set(key, arr.includes(value) ? arr.filter(v => v !== value) : [...arr, value])
+  }
+
+  const canNext = () => {
+    if (step === 1) return !!form.userType && form.purpose.length > 0
+    if (step === 2) return !!form.brandName && !!form.industry && !!form.oneLiner && !!form.target
+    return true
+  }
+
+  const buildDNA = (): BrandDNA => ({
+    userType: form.userType as BrandDNA['userType'],
+    purpose: form.purpose,
+    brandName: form.brandName,
+    industry: form.industry,
+    oneLiner: form.oneLiner,
+    target: form.target,
+    products: form.products,
+    tone: form.toneCustom ? [...form.tone, form.toneCustom] : form.tone,
+    brandFeeling: form.brandFeeling,
+    strengths: form.strengths,
+    prohibitedWords: form.prohibitedWords,
+    channels: form.channels,
+    operationStyle: form.operationStyle as BrandDNA['operationStyle'],
   })
-  const [jobAnswers, setJobAnswers] = useState<Record<string, string>>({})
 
-  const updateForm = (key: string, value: string) => setForm((prev) => ({ ...prev, [key]: value }))
-  const canProceedStep1 = jobType !== null
-  const canProceedStep2 = form.brandName && form.oneLiner && form.products && form.tone &&
-    form.target && form.differentiator && form.keyMessage1 && form.keyMessage2 && form.keyMessage3
-
-  const handleComplete = async () => {
-    if (!jobType || !form.tone) return
-    const data: BrandDNA = {
-      brandName: form.brandName, oneLiner: form.oneLiner, products: form.products,
-      tone: form.tone as ToneType, target: form.target, differentiator: form.differentiator,
-      keyMessages: [form.keyMessage1, form.keyMessage2, form.keyMessage3],
-      jobType, jobSpecificAnswers: jobAnswers,
-    }
-    localStorage.setItem('crispy_brand', JSON.stringify(data))
+  const saveDNA = async (dna: BrandDNA) => {
+    localStorage.setItem('crispy_brand', JSON.stringify(dna))
     if (userId) {
-      await supabase.from('brand_dna').upsert({ user_id: userId, data, updated_at: new Date().toISOString() }, { onConflict: 'user_id' })
+      await supabase.from('brand_dna').upsert(
+        { user_id: userId, data: dna, updated_at: new Date().toISOString() },
+        { onConflict: 'user_id' }
+      )
     }
-    onComplete(data)
+  }
+
+  const handleNext = async () => {
+    if (step === 2) {
+      // 1차 필수 항목 즉시 저장
+      await saveDNA(buildDNA())
+      setStep(3)
+    } else if (step < 4) {
+      setStep(prev => prev + 1)
+    } else {
+      setSaving(true)
+      await saveDNA(buildDNA())
+      setSaving(false)
+      setStep(5)
+    }
+  }
+
+  const handleSkip = async () => {
+    if (step === 3) {
+      setStep(4)
+    } else {
+      setSaving(true)
+      await saveDNA(buildDNA())
+      setSaving(false)
+      setStep(5)
+    }
+  }
+
+  const progress = Math.min((step / 4) * 100, 100)
+
+  if (step === 5) {
+    return <SummaryCard dna={buildDNA()} onDone={() => onComplete(buildDNA())} />
   }
 
   return (
-    <div className="min-h-screen py-10 px-4" style={{ backgroundColor: '#0f172a' }}>
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold gradient-text">브랜드 DNA 등록</h1>
-          <p className="text-slate-400 mt-1 text-sm">AI가 여러분의 브랜드를 기억합니다</p>
+    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: '#0f172a' }}>
+      <div className="max-w-lg mx-auto">
+
+        {/* 헤더 */}
+        <div className="text-center mb-6">
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Dna className="w-5 h-5 text-blue-400" />
+            <h1 className="text-xl font-bold gradient-text">브랜드 DNA 등록</h1>
+          </div>
+          <p className="text-slate-500 text-sm">AI가 여러분의 브랜드를 기억합니다</p>
         </div>
 
-        {/* Step Indicator */}
-        <div className="flex items-center justify-center gap-4 mb-8">
-          {[1, 2, 3].map((s) => (
-            <div key={s} className="flex items-center gap-4">
-              <div
-                className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold transition-all"
-                style={{
-                  background: step >= s ? 'linear-gradient(135deg, #3b82f6, #22c55e)' : '#1e293b',
-                  color: step >= s ? 'white' : '#475569',
-                  border: step >= s ? 'none' : '1px solid #334155',
-                }}
-              >
-                {step > s ? <Check className="w-4 h-4" /> : s}
-              </div>
-              {s < 3 && (
-                <div className="w-16 h-0.5 transition-all" style={{ background: step > s ? 'linear-gradient(to right, #3b82f6, #22c55e)' : '#334155' }} />
-              )}
-            </div>
+        {/* 진행률 */}
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-xs text-slate-500">Step {step} / 4</span>
+            <span className="text-xs font-medium" style={{ color: '#60a5fa' }}>{Math.round(progress)}% 완료</span>
+          </div>
+          <div className="h-1.5 rounded-full overflow-hidden" style={{ backgroundColor: '#1e293b' }}>
+            <div
+              className="h-full rounded-full transition-all duration-500"
+              style={{ width: `${progress}%`, background: 'linear-gradient(to right, #3b82f6, #22c55e)' }}
+            />
+          </div>
+          {step >= 3 && (
+            <p className="text-xs text-center mt-2" style={{ color: '#818cf8' }}>
+              ✨ 브랜드를 더 잘 기억하게 하려면 1분만 더 입력해주세요
+            </p>
+          )}
+        </div>
+
+        {/* 단계별 콘텐츠 */}
+        <div className="card p-6 mb-4">
+          {step === 1 && <Step1 form={form} set={set} toggle={toggle} />}
+          {step === 2 && <Step2 form={form} set={set} toggle={toggle} />}
+          {step === 3 && <Step3 form={form} set={set} toggle={toggle} />}
+          {step === 4 && <Step4 form={form} set={set} toggle={toggle} />}
+        </div>
+
+        {/* 네비게이션 */}
+        <div className="flex gap-3">
+          {step > 1 && (
+            <button
+              onClick={() => setStep(prev => prev - 1)}
+              className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl text-sm text-slate-400 transition-colors hover:text-slate-200"
+              style={{ backgroundColor: '#1e293b', border: '1px solid #334155' }}
+            >
+              <ChevronLeft className="w-4 h-4" />이전
+            </button>
+          )}
+          {(step === 3 || step === 4) && (
+            <button
+              onClick={handleSkip}
+              className="flex-1 py-2.5 rounded-xl text-sm transition-colors hover:text-slate-300"
+              style={{ border: '1px solid #334155', color: '#64748b' }}
+            >
+              건너뛰기
+            </button>
+          )}
+          <button
+            onClick={handleNext}
+            disabled={!canNext() || saving}
+            className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all btn-primary"
+            style={{ opacity: canNext() && !saving ? 1 : 0.4 }}
+          >
+            {saving
+              ? '저장 중...'
+              : step === 4
+                ? <><Sparkles className="w-4 h-4" />완료</>
+                : <>다음 <ChevronRight className="w-4 h-4" /></>
+            }
+          </button>
+        </div>
+
+      </div>
+    </div>
+  )
+}
+
+// ─── Step 1: 사용자 정보 ───────────────────────────────────────────────────
+
+function Step1({ form, set, toggle }: StepProps) {
+  return (
+    <div className="space-y-6">
+      <div>
+        <SectionTitle
+          title="어떤 형태로 활동하고 계신가요?"
+          help="사용자 유형에 맞는 콘텐츠 스타일을 추천해드려요"
+        />
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          {USER_TYPE_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => set('userType', opt.value)}
+              className="p-4 rounded-xl text-left transition-all"
+              style={{
+                border: form.userType === opt.value ? '2px solid #3b82f6' : '1px solid #334155',
+                backgroundColor: form.userType === opt.value ? 'rgba(59,130,246,0.1)' : '#0f172a',
+              }}
+            >
+              <p className="font-semibold text-slate-100 text-sm">{opt.label}</p>
+              <p className="text-xs text-slate-400 mt-0.5">{opt.desc}</p>
+            </button>
           ))}
         </div>
+      </div>
 
-        <div className="card p-8">
-          {/* Step 1 */}
-          {step === 1 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-100 mb-6">업종을 선택해주세요</h2>
-              <div className="grid grid-cols-2 gap-4">
-                {JOB_TYPES.map((j) => (
-                  <button
-                    key={j.type}
-                    onClick={() => setJobType(j.type)}
-                    className="p-5 rounded-xl text-left transition-all"
-                    style={{
-                      border: jobType === j.type ? '2px solid #3b82f6' : '1px solid #334155',
-                      backgroundColor: jobType === j.type ? 'rgba(59,130,246,0.1)' : '#0f172a',
-                    }}
-                  >
-                    <div className="text-2xl mb-2">{j.emoji}</div>
-                    <div className="font-semibold text-slate-100">{j.label}</div>
-                    <div className="text-xs text-slate-400 mt-1">{j.desc}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Step 2 */}
-          {step === 2 && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-100 mb-6">브랜드 기본 정보</h2>
-              <div className="space-y-5">
-                <Field label="브랜드명" required>
-                  <input type="text" value={form.brandName} onChange={(e) => updateForm('brandName', e.target.value)} placeholder="예: 마켓올리브" className="input-dark" />
-                </Field>
-                <Field label="한 줄 설명 (타겟 고객이 느껴야 할 감정)" required>
-                  <input type="text" value={form.oneLiner} onChange={(e) => updateForm('oneLiner', e.target.value)} placeholder="예: 바쁜 직장인도 건강하게 먹을 수 있다는 안도감" className="input-dark" />
-                </Field>
-                <Field label="주요 제품/서비스" required>
-                  <input type="text" value={form.products} onChange={(e) => updateForm('products', e.target.value)} placeholder="예: 간편 건강식 밀키트, 영양제 구독 서비스" className="input-dark" />
-                </Field>
-                <Field label="브랜드 톤" required>
-                  <div className="flex flex-wrap gap-2">
-                    {TONES.map((t) => (
-                      <button
-                        key={t}
-                        onClick={() => updateForm('tone', t)}
-                        className="px-4 py-2 rounded-full text-sm font-medium transition-all"
-                        style={{
-                          background: form.tone === t ? 'linear-gradient(to right, #3b82f6, #22c55e)' : '#0f172a',
-                          color: form.tone === t ? 'white' : '#94a3b8',
-                          border: form.tone === t ? 'none' : '1px solid #334155',
-                        }}
-                      >
-                        {t}
-                      </button>
-                    ))}
-                  </div>
-                </Field>
-                <Field label="타겟 고객층" required>
-                  <input type="text" value={form.target} onChange={(e) => updateForm('target', e.target.value)} placeholder="예: 30대 초반 직장인 여성, 건강에 관심 많은 2인 가구" className="input-dark" />
-                </Field>
-                <Field label="경쟁사 대비 차별점" required>
-                  <input type="text" value={form.differentiator} onChange={(e) => updateForm('differentiator', e.target.value)} placeholder="예: 국내산 재료만 사용, 영양사가 직접 설계한 레시피" className="input-dark" />
-                </Field>
-                <Field label="주요 메시지 3가지" required>
-                  <div className="space-y-2">
-                    {(['keyMessage1', 'keyMessage2', 'keyMessage3'] as const).map((key, i) => (
-                      <input key={key} type="text" value={form[key]} onChange={(e) => updateForm(key, e.target.value)} placeholder={`메시지 ${i + 1}`} className="input-dark" />
-                    ))}
-                  </div>
-                </Field>
-              </div>
-            </div>
-          )}
-
-          {/* Step 3 */}
-          {step === 3 && jobType && (
-            <div>
-              <h2 className="text-lg font-semibold text-slate-100 mb-2">
-                {JOB_TYPES.find((j) => j.type === jobType)?.label} 추가 정보
-              </h2>
-              <p className="text-sm text-slate-400 mb-6">더 정확한 콘텐츠 생성을 위한 질문입니다.</p>
-              <div className="space-y-5">
-                {JOB_QUESTIONS[jobType].map((q) => (
-                  <Field key={q.key} label={q.label}>
-                    <textarea
-                      value={jobAnswers[q.key] || ''}
-                      onChange={(e) => setJobAnswers((prev) => ({ ...prev, [q.key]: e.target.value }))}
-                      placeholder={q.placeholder}
-                      rows={2}
-                      className="input-dark resize-none"
-                    />
-                  </Field>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Navigation */}
-          <div className="flex justify-between mt-8 pt-6" style={{ borderTop: '1px solid #334155' }}>
-            {step > 1 ? (
-              <button
-                onClick={() => setStep(step - 1)}
-                className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-slate-400 hover:text-slate-200 font-medium text-sm transition-colors"
-                style={{ border: '1px solid #334155' }}
-              >
-                <ChevronLeft className="w-4 h-4" />이전
-              </button>
-            ) : <div />}
-
-            {step < 3 ? (
-              <button
-                onClick={() => setStep(step + 1)}
-                disabled={step === 1 ? !canProceedStep1 : !canProceedStep2}
-                className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm"
-              >
-                다음<ChevronRight className="w-4 h-4" />
-              </button>
-            ) : (
-              <button onClick={handleComplete} className="btn-primary flex items-center gap-2 px-6 py-2.5 text-sm">
-                <Check className="w-4 h-4" />등록 완료
-              </button>
-            )}
-          </div>
+      <div>
+        <SectionTitle
+          title="주로 어떤 목적으로 사용하실 건가요?"
+          help="여러 개 선택 가능 · 목적에 맞게 콘텐츠 방향을 잡아드려요"
+        />
+        <div className="flex flex-wrap gap-2 mt-3">
+          {PURPOSE_OPTIONS.map(opt => (
+            <Chip
+              key={opt}
+              label={opt}
+              selected={form.purpose.includes(opt)}
+              onClick={() => toggle('purpose', opt)}
+            />
+          ))}
         </div>
       </div>
     </div>
   )
 }
 
-function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
+// ─── Step 2: 브랜드 기본 정보 (1차 필수) ─────────────────────────────────
+
+function Step2({ form, set }: StepProps) {
+  return (
+    <div className="space-y-5">
+      <SectionTitle
+        title="브랜드 기본 정보를 알려주세요"
+        help="AI가 브랜드를 이해하는 핵심 정보예요"
+      />
+      <Field label="브랜드명" help="고객에게 불리는 이름이면 돼요" required>
+        <input
+          value={form.brandName}
+          onChange={e => set('brandName', e.target.value)}
+          placeholder="예: 마켓올리브"
+          className="input-dark"
+        />
+      </Field>
+      <Field label="업종 또는 카테고리" help="어떤 분야인지 알면 콘텐츠 톤이 달라져요" required>
+        <input
+          value={form.industry}
+          onChange={e => set('industry', e.target.value)}
+          placeholder="예: 건강식품, 인테리어 디자인, 원데이 클래스"
+          className="input-dark"
+        />
+      </Field>
+      <Field label="브랜드 한 줄 소개" help="우리 브랜드를 한 문장으로 설명한다면?" required>
+        <input
+          value={form.oneLiner}
+          onChange={e => set('oneLiner', e.target.value)}
+          placeholder="예: 바쁜 직장인도 건강하게 먹을 수 있는 간편식"
+          className="input-dark"
+        />
+      </Field>
+      <Field label="주요 고객층" help="누구에게 말하는지 알아야 맞는 표현을 쓸 수 있어요" required>
+        <input
+          value={form.target}
+          onChange={e => set('target', e.target.value)}
+          placeholder="예: 30대 직장인 여성, 건강에 관심 있는 2인 가구"
+          className="input-dark"
+        />
+      </Field>
+    </div>
+  )
+}
+
+// ─── Step 3: 브랜드 스타일 (2차 확장) ────────────────────────────────────
+
+function Step3({ form, set, toggle }: StepProps) {
+  return (
+    <div className="space-y-5">
+      <SectionTitle
+        title="브랜드 스타일을 알려주세요"
+        help="콘텐츠의 말투와 표현 기준을 정해요"
+      />
+      <Field label="주력 상품/서비스" help="AI가 구체적으로 뭘 판매하는지 알면 콘텐츠가 더 정확해져요">
+        <input
+          value={form.products}
+          onChange={e => set('products', e.target.value)}
+          placeholder="예: 영양사가 만든 간편 밀키트, 건강기능식품 구독"
+          className="input-dark"
+        />
+      </Field>
+      <Field label="브랜드 톤앤매너" help="여러 개 선택 가능 · 직접 입력도 할 수 있어요">
+        <div className="flex flex-wrap gap-2 mb-2">
+          {TONE_OPTIONS.map(t => (
+            <Chip key={t} label={t} selected={form.tone.includes(t)} onClick={() => toggle('tone', t)} />
+          ))}
+        </div>
+        <input
+          value={form.toneCustom}
+          onChange={e => set('toneCustom', e.target.value)}
+          placeholder="직접 입력 (예: 감성적인, 도발적인)"
+          className="input-dark"
+        />
+      </Field>
+      <Field label="고객이 브랜드를 어떻게 느끼길 원하나요?" help="감정 기준으로 콘텐츠 방향을 잡아요">
+        <input
+          value={form.brandFeeling}
+          onChange={e => set('brandFeeling', e.target.value)}
+          placeholder="예: 믿을 수 있는, 주변 친구 같은, 편안한 전문가"
+          className="input-dark"
+        />
+      </Field>
+      <Field label="핵심 강점 2~3가지" help="경쟁사와 다른 점, 고객이 좋아하는 이유예요">
+        <textarea
+          value={form.strengths}
+          onChange={e => set('strengths', e.target.value)}
+          placeholder="예: 국내산 재료만 사용 / 영양사 직접 설계 / 3일 이내 배송"
+          rows={2}
+          className="input-dark resize-none"
+        />
+      </Field>
+      <Field label="피하고 싶은 표현 또는 금지어" help="이 표현들은 콘텐츠에서 절대 쓰지 않아요">
+        <input
+          value={form.prohibitedWords}
+          onChange={e => set('prohibitedWords', e.target.value)}
+          placeholder="예: 다이어트, 살빼기, 저렴한"
+          className="input-dark"
+        />
+      </Field>
+    </div>
+  )
+}
+
+// ─── Step 4: 운영 방식 (2차 확장) ────────────────────────────────────────
+
+function Step4({ form, set, toggle }: StepProps) {
+  return (
+    <div className="space-y-5">
+      <SectionTitle
+        title="콘텐츠 운영 방식을 알려주세요"
+        help="어떤 채널에서 어떻게 쓸지 알면 더 맞는 형식으로 만들어드려요"
+      />
+      <Field label="주로 사용할 채널" help="여러 개 선택 가능">
+        <div className="flex flex-wrap gap-2">
+          {CHANNEL_OPTIONS.map(c => (
+            <Chip key={c} label={c} selected={form.channels.includes(c)} onClick={() => toggle('channels', c)} />
+          ))}
+        </div>
+      </Field>
+      <Field label="콘텐츠 운영 방식" help="일상 발행과 이벤트성 발행 중 어떤 게 더 필요한가요?">
+        <div className="space-y-2 mt-1">
+          {OPERATION_OPTIONS.map(opt => (
+            <button
+              key={opt.value}
+              onClick={() => set('operationStyle', opt.value)}
+              className="w-full p-3.5 rounded-xl text-left text-sm transition-all"
+              style={{
+                border: form.operationStyle === opt.value ? '2px solid #3b82f6' : '1px solid #334155',
+                backgroundColor: form.operationStyle === opt.value ? 'rgba(59,130,246,0.1)' : '#0f172a',
+                color: form.operationStyle === opt.value ? '#60a5fa' : '#94a3b8',
+              }}
+            >
+              {opt.label}
+            </button>
+          ))}
+        </div>
+      </Field>
+    </div>
+  )
+}
+
+// ─── 완료 요약 카드 ───────────────────────────────────────────────────────
+
+function SummaryCard({ dna, onDone }: { dna: BrandDNA; onDone: () => void }) {
+  const toneList = Array.isArray(dna.tone) ? dna.tone : []
+  const channelList = Array.isArray(dna.channels) ? dna.channels : []
+
+  return (
+    <div className="min-h-screen py-8 px-4" style={{ backgroundColor: '#0f172a' }}>
+      <div className="max-w-lg mx-auto">
+        <div className="text-center mb-6">
+          <div
+            className="w-14 h-14 rounded-full flex items-center justify-center mx-auto mb-3"
+            style={{ background: 'linear-gradient(135deg, #3b82f6, #22c55e)' }}
+          >
+            <Check className="w-7 h-7 text-white" />
+          </div>
+          <h2 className="text-xl font-bold text-slate-100">브랜드 DNA 등록 완료!</h2>
+          <p className="text-slate-500 text-sm mt-1">AI가 이제 여러분의 브랜드를 기억합니다</p>
+        </div>
+
+        <div className="card p-6 mb-4">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-bold text-slate-100">{dna.brandName}</h3>
+              <p className="text-sm text-slate-400 mt-0.5">{dna.industry}</p>
+            </div>
+            {dna.userType && (
+              <span
+                className="px-2.5 py-1 rounded-full text-xs font-medium flex-shrink-0 ml-3"
+                style={{
+                  backgroundColor: 'rgba(59,130,246,0.15)',
+                  color: '#60a5fa',
+                  border: '1px solid rgba(59,130,246,0.3)',
+                }}
+              >
+                {dna.userType}
+              </span>
+            )}
+          </div>
+
+          <p
+            className="text-sm text-slate-300 pb-4 mb-4 italic"
+            style={{ borderBottom: '1px solid #334155' }}
+          >
+            "{dna.oneLiner}"
+          </p>
+
+          <div className="space-y-4">
+            <DNARow label="타겟 고객" value={dna.target} />
+            {dna.products && <DNARow label="주력 상품/서비스" value={dna.products} />}
+            {dna.strengths && <DNARow label="핵심 강점" value={dna.strengths} />}
+            {toneList.length > 0 && (
+              <div>
+                <p className="text-xs text-slate-500 mb-1.5">톤앤매너</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {toneList.map(t => (
+                    <span
+                      key={t}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium"
+                      style={{
+                        backgroundColor: 'rgba(34,197,94,0.1)',
+                        color: '#4ade80',
+                        border: '1px solid rgba(34,197,94,0.2)',
+                      }}
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {channelList.length > 0 && (
+              <div>
+                <p className="text-xs text-slate-500 mb-1.5">운영 채널</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {channelList.map(c => (
+                    <span
+                      key={c}
+                      className="px-2.5 py-1 rounded-lg text-xs font-medium"
+                      style={{
+                        backgroundColor: 'rgba(139,92,246,0.1)',
+                        color: '#c084fc',
+                        border: '1px solid rgba(139,92,246,0.2)',
+                      }}
+                    >
+                      {c}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+            {dna.operationStyle && (
+              <DNARow
+                label="운영 방식"
+                value={dna.operationStyle === '정기' ? '정기 콘텐츠 발행' : dna.operationStyle === '이벤트' ? '이벤트/캠페인 중심' : '정기 + 이벤트 병행'}
+              />
+            )}
+          </div>
+        </div>
+
+        <button
+          onClick={onDone}
+          className="btn-primary w-full py-3.5 flex items-center justify-center gap-2 text-sm font-semibold"
+        >
+          <Sparkles className="w-4 h-4" />대시보드로 이동
+        </button>
+      </div>
+    </div>
+  )
+}
+
+// ─── 공통 컴포넌트 ────────────────────────────────────────────────────────
+
+function SectionTitle({ title, help }: { title: string; help: string }) {
   return (
     <div>
-      <label className="block text-sm font-medium text-slate-300 mb-1.5">
-        {label} {required && <span style={{ color: '#3b82f6' }}>*</span>}
+      <h2 className="text-base font-semibold text-slate-100">{title}</h2>
+      <p className="text-xs text-slate-500 mt-1">{help}</p>
+    </div>
+  )
+}
+
+function Chip({ label, selected, onClick }: { label: string; selected: boolean; onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="px-3.5 py-2 rounded-xl text-sm font-medium transition-all"
+      style={{
+        backgroundColor: selected ? 'rgba(59,130,246,0.15)' : '#0f172a',
+        border: `1px solid ${selected ? '#3b82f6' : '#334155'}`,
+        color: selected ? '#60a5fa' : '#94a3b8',
+      }}
+    >
+      {label}
+    </button>
+  )
+}
+
+function Field({
+  label,
+  help,
+  required,
+  children,
+}: {
+  label: string
+  help?: string
+  required?: boolean
+  children: React.ReactNode
+}) {
+  return (
+    <div>
+      <label className="block text-sm font-medium text-slate-300 mb-1">
+        {label}
+        {required && <span className="text-blue-400 ml-1">*</span>}
       </label>
+      {help && <p className="text-xs text-slate-500 mb-2">{help}</p>}
       {children}
+    </div>
+  )
+}
+
+function DNARow({ label, value }: { label: string; value: string }) {
+  return (
+    <div>
+      <p className="text-xs text-slate-500">{label}</p>
+      <p className="text-sm text-slate-300 mt-0.5">{value}</p>
     </div>
   )
 }

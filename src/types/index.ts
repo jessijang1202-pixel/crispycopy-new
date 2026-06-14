@@ -1,17 +1,20 @@
-export type JobType = '1인창업자' | '프리랜서' | '소상공인' | '기타'
-
-export type ToneType = '친근함' | '전문성' | '고급스러움' | '유머' | '감성'
+export type UserType = '1인창업가' | '프리랜서' | '소상공인' | '기타'
+export type OperationStyle = '정기' | '이벤트' | '둘다' | ''
 
 export interface BrandDNA {
+  userType: UserType
+  purpose: string[]
   brandName: string
+  industry: string
   oneLiner: string
-  products: string
-  tone: ToneType
   target: string
-  differentiator: string
-  keyMessages: [string, string, string]
-  jobType: JobType
-  jobSpecificAnswers: Record<string, string>
+  products: string
+  tone: string[]
+  brandFeeling: string
+  strengths: string
+  prohibitedWords: string
+  channels: string[]
+  operationStyle: OperationStyle
 }
 
 export interface Schedule {
@@ -25,9 +28,6 @@ export interface Schedule {
   keyMessage?: string
 }
 
-export interface GeneratedContent {
-  blog: string
-  instagram: string
-}
+export type GeneratedContent = Record<string, string>
 
 export type Page = 'login' | 'signup' | 'onboarding' | 'brand-dna' | 'schedule' | 'dashboard' | 'content' | 'admin'
