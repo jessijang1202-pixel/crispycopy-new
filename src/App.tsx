@@ -170,7 +170,7 @@ export default function App() {
       {page === 'onboarding' && <OnboardingPage onStart={() => setPage('brand-dna')} />}
       {page === 'brand-dna' && <BrandDNAPage userId={userId ?? undefined} initialData={brand ?? undefined} onComplete={handleBrandComplete} />}
       {page === 'schedule' && <SchedulePage userId={userId ?? undefined} schedules={schedules} onUpdate={handleScheduleUpdate} />}
-      {page === 'dashboard' && <DashboardPage brand={brand} schedules={schedules} onNavigate={setPage} />}
+      {page === 'dashboard' && <DashboardPage brand={brand} schedules={schedules} userId={userId ?? undefined} onNavigate={setPage} onScheduleUpdate={handleScheduleUpdate} />}
       {page === 'content' && brand && <ContentPage userId={userId ?? undefined} brand={brand} schedules={schedules} />}
       {page === 'content' && !brand && (
         <div className="max-w-2xl mx-auto py-20 text-center text-slate-500">
