@@ -22,11 +22,11 @@ const TYPE_META: Record<ScheduleType, { label: string; color: string; bg: string
 const emptyEdit = { name: '', startDate: '', endDate: '', date: '', description: '', keyMessage: '' }
 
 export default function DashboardPage({ brand, schedules, userId, onNavigate, onScheduleUpdate }: Props) {
-  const [expandedType, setExpandedType] = useState<ScheduleType | null>(null)
+  const [expandedType, setExpandedType] = useState<ScheduleType | null>('campaign')
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editForm, setEditForm] = useState(emptyEdit)
 
-  const campaigns = schedules.filter((s) => s.type === 'campaign')
+  const campaigns = schedules.filter((s) => s.type === 'campaign').slice().reverse()
   const events    = schedules.filter((s) => s.type === 'event')
   const regulars  = schedules.filter((s) => s.type === 'regular')
 
